@@ -1,0 +1,6 @@
+@BookMateHub.Api_HostAddress = http://localhost:5239
+
+GET {{BookMateHub.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
