@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController : ControllerBase
-{
+{//erol
     private readonly ApplicationDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly EmailService _emailService;
