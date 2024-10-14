@@ -1,30 +1,66 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using BookMateHub.Api.Data;
+using BookMateHub.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// PostgreSQL bağlantısı
+// PostgreSQL bağlantısı yapılandırması
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(3)));
 
-// JWT Authentication yapılandırması
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+// Authentication ve Authorization yapılandırması
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-    };
-});
+        options.RequireHttpsMetadata = true; // HTTPS zorunluluğu
+        options.SaveToken = true; // Token saklama
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
+        };
+    });
+
+builder.Services.AddAuthorization(); // Authorization servisi ekleme
+builder.Services.AddControllers();   // Controller desteği ekleme
+builder.Services.AddScoped<EmailService>(); // EmailService kaydı
+
+// Swagger desteği (isteğe bağlı)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-app.UseAuthentication();
-app.UseAuthorization();
+
+// HTTPS yönlendirmesini yalnızca https profilinde etkinleştir
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+// Geliştirme ortamında Swagger UI etkinleştir
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// Middleware yapılandırması
+app.UseAuthentication(); // Kimlik doğrulama
+app.UseAuthorization();  // Yetkilendirme
+
+// Controller rotalarını haritalandırma
 app.MapControllers();
+
+// Uygulamayı çalıştır
 app.Run();

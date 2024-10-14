@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "4mIQZystO7BZciP+rulkc4Cdg4dphLe/Z2z6+oLhm8A=",
+  "Source": "BookMateHub.Api",
+  "BasePath": "_content/BookMateHub.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
